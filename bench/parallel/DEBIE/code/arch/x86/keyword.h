@@ -157,10 +157,10 @@ extern void Call_Patch (fptr_t func);
 
 #include <stdio.h>
 
-#define TARGET_INIT        printf ("Target Init.\n")
-#define TARGET_MARK        printf ("Target Mark.\n")
-#define TARGET_REBOOT      printf ("Target Reboot.\n")
-#define TARGET_START_TEST  printf ("Target Start Test.\n")
+#define TARGET_INIT        //printf ("Target Init.\n")
+#define TARGET_MARK        //printf ("Target Mark.\n")
+#define TARGET_REBOOT      //printf ("Target Reboot.\n")
+#define TARGET_START_TEST  //printf ("Target Start Test.\n")
 #define TARGET_REPEAT_TEST 0
 
 #endif
