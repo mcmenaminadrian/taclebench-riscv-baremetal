@@ -127,6 +127,17 @@ _start:
   sll sp, sp, STKSHIFT
   add sp, sp, tp
 
+ # vm
+
+	# set up page table
+	
+	la a3, _init
+	csrw mepc, a3
+	li a3, 0x1800
+	csrrc a3, mstatus, a3
+	li a3, 0x9000080
+	csrrs a3, mstatus, a3
+	mret
   j _init
 
   .align 2
@@ -194,7 +205,7 @@ trap_entry:
   LREG x17, 17*REGBYTES(sp)
   LREG x18, 18*REGBYTES(sp)
   LREG x19, 19*REGBYTES(sp)
-  LREG x20, 20*REGBYTES(sp)
+  LREG x17, 20*REGBYTES(sp)
   LREG x21, 21*REGBYTES(sp)
   LREG x22, 22*REGBYTES(sp)
   LREG x23, 23*REGBYTES(sp)

@@ -61,6 +61,10 @@ void __attribute__((noreturn)) tohost_exit(long code)
 
 long handle_trap(long cause, long epc, long regs[32])
 {
+	if (cause == CAUSE_FAULT_FETCH) {
+		long pageAddress = epc ^ 0xFFF;
+		insertPage(pageAddress);
+	}
   if (cause != CAUSE_MACHINE_ECALL)
     tohost_exit(1337);
   else if (regs[17] == SYS_exit)
@@ -124,12 +128,24 @@ static void init_tls()
   memset(thread_pointer + tdata_size, 0, tbss_size);
 }
 
+void fubar(long x, long y, long z)
+{
+	return;
+}
+
+
 void _init(int cid, int nc)
 {
   init_tls();
   thread_entry(cid, nc);
 
   // only single-threaded programs should ever get here.
+	__asm__("nop;"
+		"nop;"
+		"nop;"
+		"nop;"
+	);
+	fubar(0, 1, 2);
   int ret = main(0, 0);
 
   char buf[NUM_COUNTERS * 32] __attribute__((aligned(64)));
