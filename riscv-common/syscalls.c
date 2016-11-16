@@ -62,7 +62,11 @@ void __attribute__((noreturn)) tohost_exit(long code)
 void insertPage(long pageAddress)
 {
 	//walk page table to find free entry
-	
+	for (int i = 0; i < MAXPAGES; i++) {
+		//read page[i].valid
+		//if !valid mark entry then fill in bitmark and return
+		
+	}
 	//if no free entry - blast page at random
 }
 
@@ -71,6 +75,7 @@ long handle_trap(long cause, long epc, long regs[32])
 	if (cause == CAUSE_FAULT_FETCH) {
 		long pageAddress = epc ^ 0xFFF;
 		insertPage(pageAddress);
+		return 0;
 	}
   if (cause != CAUSE_MACHINE_ECALL)
     tohost_exit(1337);
