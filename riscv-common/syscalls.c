@@ -10,6 +10,8 @@
 #define SYS_write 64
 #define SYS_exit 93
 #define SYS_stats 1234
+#define LOCALMEMSTART 0x90000000
+#define VMSTART 0x80000000
 
 extern volatile uint64_t tohost;
 extern volatile uint64_t fromhost;
@@ -58,6 +60,41 @@ void __attribute__((noreturn)) tohost_exit(long code)
   tohost = (code << 1) | 1;
   while (1);
 }
+	
+
+void setupPageTables(long number, long baseAddress)
+{
+	//zero out our pages
+	for (long i = 0; i < 4096 * number; i += sizeof(long)) {
+		long *point = (long *)(i + LOCALMEMSTART);
+		*point = 0;
+	}
+
+	//now set up page tables for Sv39
+	uint64_t vmStart = VMSTART >> 29;
+	uint64_t *pteBaseEntry =
+		(uint64_t *)(vmStart * sizeof(uint64_t) + LOCALMEMSTART);
+	*pteBaseEntry = 0x24004C1; //0x90001 << 2 = 0x24004
+	uint64_t vmMiddle = ((VMSTART + 0x1000) >> 21)	& 0x1FF;
+	uint64_t *pteMiddleEntry =
+		(uint64_t *)(vmMiddle * sizeof(uint64_t) +
+		LOCALMEMSTART + 0x1000);
+	*pteMiddleEntry = 0x24008C1;
+	uint64_t vmGround = ((VMSTART + 0x2000) >> 12) & 0x1FF;
+	for (int i = 0; i < number; i++) 
+	{
+		uint64_t *pteGroundEntry = (uint64_t *)
+			((vmGround + i) * sizeof(uint64_t) +
+			LOCALMEMSTART + 0x2000);
+		if (i < 3) {
+			*pteGroundEntry = ((0x90000 + i) << 10)|0xCF;
+		} else {
+			*pteGroundEntry = (0x90000 + i) << 10;
+		}
+	}
+}
+			
+			
 
 void insertPage(long pageAddress)
 {
