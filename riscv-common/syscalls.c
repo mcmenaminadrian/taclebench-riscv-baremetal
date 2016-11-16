@@ -59,6 +59,13 @@ void __attribute__((noreturn)) tohost_exit(long code)
   while (1);
 }
 
+void insertPage(long pageAddress)
+{
+	//walk page table to find free entry
+	
+	//if no free entry - blast page at random
+}
+
 long handle_trap(long cause, long epc, long regs[32])
 {
 	if (cause == CAUSE_FAULT_FETCH) {
