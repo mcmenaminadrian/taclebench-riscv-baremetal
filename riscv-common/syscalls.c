@@ -12,6 +12,7 @@
 #define SYS_stats 1234
 #define LOCALMEMSTART 0x90000000
 #define VMSTART 0x80000000
+#define MAXPAGES 8
 
 extern volatile uint64_t tohost;
 extern volatile uint64_t fromhost;
@@ -60,14 +61,26 @@ void __attribute__((noreturn)) tohost_exit(long code)
   tohost = (code << 1) | 1;
   while (1);
 }
+
+struct PhysPage {
+	struct PhysPage *prev;
+	struct PhysPage *next;
+	uint64_t baseAddress;
+	char flags;
+};
+
+struct PhysPage *head = NULL;
+struct PhysPage *tail = NULL;
 	
 
-void setupPageTables(long number, long baseAddress)
+void setupPageTables(long baseAddress)
 {
 	//zero out our pages
-	for (long i = 0; i < 4096 * number; i += sizeof(long)) {
-		long *point = (long *)(i + LOCALMEMSTART);
-		*point = 0;
+	for (long i = 0; i < MAXPAGES; i ++) {
+		for (long j = 0; j < 4096; j += sizeof(long)) {
+			long *point = (long *)(i * 4096 + j + LOCALMEMSTART);
+			*point = 0;
+		}
 	}
 
 	//now set up page tables for Sv39
@@ -75,13 +88,29 @@ void setupPageTables(long number, long baseAddress)
 	uint64_t *pteBaseEntry =
 		(uint64_t *)(vmStart * sizeof(uint64_t) + LOCALMEMSTART);
 	*pteBaseEntry = 0x24004C1; //0x90001 << 2 = 0x24004
+
+	head = (struct PhysPage *)(LOCALMEMSTART + 0x800);
+	struct PhysPage *before = NULL;
+	for (uint64_t i = 0; i < MAXPAGES; i++) {
+		struct PhysPage *item = (struct PhysPage *)(
+			LOCALMEMSTART + 0x800 + i * sizeof(struct PhysPage));
+		item->baseAddress = LOCALMEMSTART + i * 0x1000;
+		if (before) {
+			before->next = item;
+			item->prev = before;
+		}
+		tail = item;
+		before = item;
+	}
+			
+
 	uint64_t vmMiddle = ((VMSTART + 0x1000) >> 21)	& 0x1FF;
 	uint64_t *pteMiddleEntry =
 		(uint64_t *)(vmMiddle * sizeof(uint64_t) +
 		LOCALMEMSTART + 0x1000);
 	*pteMiddleEntry = 0x24008C1;
 	uint64_t vmGround = ((VMSTART + 0x2000) >> 12) & 0x1FF;
-	for (int i = 0; i < number; i++) 
+	for (int i = 0; i < MAXPAGES; i++) 
 	{
 		uint64_t *pteGroundEntry = (uint64_t *)
 			((vmGround + i) * sizeof(uint64_t) +

@@ -119,25 +119,41 @@ _start:
   li a1, 1
 1:bgeu a0, a1, 1b
 
-  # give each core 128KB of stack + TLS
-#define STKSHIFT 17
+
+ # give each core 4KB of stack + TLS
+#define STKSHIFT 12
   sll a2, a0, STKSHIFT
   add tp, tp, a2
   add sp, a0, 1
   sll sp, sp, STKSHIFT
   add sp, sp, tp
 
- # vm
 
 	# set up page table
+  nop
+  nop
+  nop	
+  li a0, 0x80000000
+  j setupPageTables
+
+  nop
+  nop
+  nop
+  nop
+
 	
-	la a3, _init
-	csrw mepc, a3
-	li a3, 0x1800
-	csrrc a3, mstatus, a3
-	li a3, 0x9000080
-	csrrs a3, mstatus, a3
-	mret
+  la a3, _init
+  csrw mepc, a3
+  li a3, 0x1800
+  csrrc a3, mstatus, a3
+  li a3, 0x9000080
+  csrrs a3, mstatus, a3
+
+
+ 
+ # jump in
+
+  mret
   j _init
 
   .align 2
